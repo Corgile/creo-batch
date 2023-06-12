@@ -1,3 +1,0 @@
-C:/Users/gzhu03/IdeaProjects/cmd-script/cmake-build-debug/CMakeFiles/cmd-script.dir
-C:/Users/gzhu03/IdeaProjects/cmd-script/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/gzhu03/IdeaProjects/cmd-script/cmake-build-debug/CMakeFiles/rebuild_cache.dir
