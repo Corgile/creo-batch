@@ -27,13 +27,13 @@ FileSystemWatcher::Run(LPCTSTR dir, bool bWatchSubtree, DWORD dwNotifyFilter, LP
   this->Close();
 
   m_hDir = CreateFile(//dir目录不能以'\'结尾，否则监测不到dir目录被删除，不以\结尾，可以检测到（仅限于空目录时）
-      dir,
-      GENERIC_READ,
-      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-      nullptr,
-      OPEN_EXISTING,
-      FILE_FLAG_BACKUP_SEMANTICS,
-      nullptr
+     dir,
+     GENERIC_READ,
+     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+     nullptr,
+     OPEN_EXISTING,
+     FILE_FLAG_BACKUP_SEMANTICS,
+     nullptr
   );
   if (INVALID_HANDLE_VALUE == m_hDir) return false;
 
