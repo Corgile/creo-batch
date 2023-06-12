@@ -1,0 +1,2 @@
+#pragma code_page(65001)
+1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "C:/Users/gzhu03/IdeaProjects/cmd-script/cmake-build-debug/CMakeFiles/cmd-script.dir/embed.manifest"
