@@ -11,27 +11,27 @@ void WINAPI MyCallback(FileSystemWatcher::ACTION action, LPCWSTR _filename, LPVO
   static FileSystemWatcher::ACTION pre_act = FileSystemWatcher::ACTION_ERRSTOP;
   switch (action) {
     case FileSystemWatcher::ACTION_ADDED:
-      wprintf_s(L"\033[32m添加:\t%s\033[0m\n", _filename);
+      wprintf_s(L"\t- 添加:\t%s\n", _filename);
       break;
     case FileSystemWatcher::ACTION_REMOVED:
-      wprintf_s(L"\033[31m删除:\t%s\033[0m\n", _filename);
+      wprintf_s(L"\t- 删除:\t%s\n", _filename);
       break;
     case FileSystemWatcher::ACTION_MODIFIED:
       if (pre_act == FileSystemWatcher::ACTION_MODIFIED) {
-        wprintf_s(L"\033[33m修改:\t%s\033[0m\n", _filename);
+        wprintf_s(L"\t- 修改:\t%s\n", _filename);
       }
       break;
     case FileSystemWatcher::ACTION_RENAMED_OLD:
-      wprintf_s(L"\033[34m将 [%s] 改名为 ", _filename);
+      wprintf_s(L"\t- 将 [%s] 改名为 ", _filename);
       break;
     case FileSystemWatcher::ACTION_RENAMED_NEW:
       if (pre_act == FileSystemWatcher::ACTION_RENAMED_OLD) {
-        wprintf_s(L"[%s]\033[0m\n", _filename);
+        wprintf_s(L"[%s]\n", _filename);
       }
       break;
     case FileSystemWatcher::ACTION_ERRSTOP:
     default:
-      wprintf_s(L"---错误---%s\n", _filename);
+      wprintf_s(L"\t---错误---%s\n", _filename);
       break;
   }
   pre_act = action;
@@ -103,8 +103,11 @@ void TraverseDirectory(const fs::path &directory) {
 }
 
 int main(int argc, char *argv[]) {
+  _tsetlocale(LC_CTYPE, TEXT("chs"));
   fs::path directory(argv[1]);
+  wprintf_s(L"- 正在生成 .mnu，请稍候\n");
   TraverseDirectory(directory);
+  wprintf_s(L"- 创建 .mnu 已完成\n");
 
   LPCTSTR sDir = argv[1];
   DWORD dwNotifyFilter =
@@ -116,8 +119,8 @@ int main(int argc, char *argv[]) {
   bool r = fsw.Run(sDir, true, dwNotifyFilter, &MyCallback, nullptr);
   if (!r) return -1;
 
-  _tsetlocale(LC_CTYPE, TEXT("chs"));
-  wprintf_s(L"监听 [%s] \n", directory.wstring().c_str());
+
+  wprintf_s(L"- 监听 [%s] 的变化, ", directory.wstring().c_str());
   wprintf_s(L"按 %c 退出.\n", 'q');
 
   while (_getch() != 'q');
