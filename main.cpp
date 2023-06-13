@@ -1,8 +1,11 @@
-#include <iostream>
 #include <conio.h>
 #include <filesystem>
 #include <fstream>
-#include <sec_api/tchar_s.h>
+#include <tchar.h>
+#include <set>
+#include <queue>
+#include <sstream>
+#include <iostream>
 #include "file-watcher.hpp"
 
 namespace fs = std::filesystem;
@@ -37,7 +40,6 @@ void WINAPI MyCallback(FileSystemWatcher::ACTION action, LPCWSTR _filename, LPVO
   pre_act = action;
 }
 
-
 void RemoveVersionNumberSuffix(std::string &str) {
   std::size_t dotPosition = str.find_last_of('.');
   if (dotPosition == std::string::npos) { return; }
@@ -66,54 +68,94 @@ bool IsAllowedFile(const std::string &file_name) {
   return is_asm || is_prt;
 }
 
-void TraverseDirectory(const fs::path &directory) {
-  {
-    // 创建 mnu 文件
-    std::ofstream mnu_file(directory / (directory.filename().wstring() + L".mnu"));
-    //  mnu_file.imbue(std::locale("chs"));
-    mnu_file << directory.filename().string() << "\n#\n#\n";
-    // 遍历当前目录下的文件和子目录
-    for (const auto &entry: fs::directory_iterator(directory)) {
-      if (entry.is_regular_file()) {
-        auto file_name = entry.path().filename().string();
-        RemoveVersionNumberSuffix(file_name);
-        if (IsAllowedFile(file_name)) {
-          mnu_file << file_name << '\n';
-          mnu_file << std::string("BeiZhu-") << file_name << "\n#\n";
-        }
-      }
-      if (entry.is_directory()) {
-        fs::path renamed_path = entry;
-        if (!StartsWith(entry.path().filename().string(), "A-")) {
-          renamed_path = directory / (L"A-" + entry.path().filename().wstring());
-          fs::rename(entry.path(), renamed_path);
-        }
-        auto folder_name = renamed_path.filename().string();
-        mnu_file << "/" << folder_name << '\n';
-        mnu_file << std::string("BeiZhu-") << folder_name.substr(2) << "\n#\n";
+void ProcessCurrentDirectory(const fs::path &current_dir) {
+  // 创建 mnu 文件
+  std::ofstream mnu_file(current_dir / (current_dir.filename().wstring() + L".mnu"));
+  //  mnu_file.imbue(std::locale("chs"));
+  mnu_file << current_dir.filename().string() << "\n#\n#\n";
+  // 遍历当前目录下的文件和子目录
+  std::set<std::string> items;
+  for (const auto &entry: fs::directory_iterator(current_dir)) {
+    std::stringstream oss;
+    if (entry.is_regular_file()) {
+      auto file_name = entry.path().filename().string();
+      RemoveVersionNumberSuffix(file_name);
+      if (IsAllowedFile(file_name)) {
+        oss << file_name << "\nBeiZhu-" << file_name << "\n#\n";
       }
     }
+    if (entry.is_directory()) {
+      fs::path renamed_path = entry;
+      if (!StartsWith(entry.path().filename().string(), "A-")) {
+        renamed_path = current_dir / (L"A-" + entry.path().filename().wstring());
+        fs::rename(entry.path(), renamed_path);
+      }
+      auto folder_name = renamed_path.filename().string();
+      oss << "/" << folder_name << "\nBeiZhu-" << folder_name.substr(2) << "\n#\n";
+    }
+    items.emplace(oss.str());
   }
+  for (auto &item: items) {
+    mnu_file << item;
+  }
+  items.clear();
+}
+
+void TraverseDirectory(const fs::path &directory) {
+  if (fs::is_regular_file(directory)) return;
+  ProcessCurrentDirectory(directory);
   // 递归遍历子目录
   for (const auto &entry: fs::directory_iterator(directory)) {
-    if (entry.is_directory()) {
-      TraverseDirectory(entry.path());
+    TraverseDirectory(entry.path());
+  }
+}
+
+void TraverseDirectoryNR(const fs::path &directory) {
+  std::queue<fs::path> queue;
+  queue.push(directory);
+  while (!queue.empty()) {
+    fs::path current = queue.front();
+    queue.pop();
+    if (fs::is_regular_file(current)) continue;
+    ProcessCurrentDirectory(current);
+    for (const auto &entry: fs::directory_iterator(current)) {
+      queue.push(entry);
     }
   }
 }
 
-int main(int argc, char *argv[]) {
-  _tsetlocale(LC_CTYPE, TEXT("chs"));
-  fs::path directory(argv[1]);
-  wprintf_s(L"- 正在生成 .mnu，请稍候\n");
-  TraverseDirectory(directory);
-  wprintf_s(L"- 创建 .mnu 已完成\n");
 
+int main(int argc, char *argv[]) {
+//  _tsetlocale(LC_CTYPE, TEXT("chs"));
+  SetConsoleOutputCP(65001);
+  const char *proLibraryDir = std::getenv("PRO_LIBRARY_DIR");
+  fs::path directory;
+  if (!proLibraryDir) {
+    std::cout << "环境变量 PRO_LIBRARY_DIR 未设置" << std::endl;
+    if (argc == 1) {
+      std::cout << ", 程序并且缺少必要路径参数, 正在退出程序.." << std::endl;
+      exit(EXIT_FAILURE);
+    } else {
+      directory = fs::path(argv[1]);
+      if (!fs::exists(directory)) {
+        std::cout << "路径 [" << directory.string() << "] 不存在, 正在退出程序.." << std::endl;
+        exit(EXIT_FAILURE);
+      }
+    }
+  } else {
+    directory = fs::path(proLibraryDir);
+  }
+
+  std::cout << "- 正在生成 .mnu，请稍候" << std::endl;
+  TraverseDirectoryNR(directory);
+  std::cout << "- 创建 .mnu 已完成" << std::endl;
+
+/*
   LPCTSTR sDir = argv[1];
   DWORD dwNotifyFilter =
-     FileSystemWatcher::FILTER_FILE_NAME
-     | FileSystemWatcher::FILTER_DIR_NAME
-     | FileSystemWatcher::FILTER_LAST_WRITE_NAME;
+      FileSystemWatcher::FILTER_FILE_NAME
+      | FileSystemWatcher::FILTER_DIR_NAME
+      | FileSystemWatcher::FILTER_LAST_WRITE_NAME;
 
   FileSystemWatcher fsw;
   bool r = fsw.Run(sDir, true, dwNotifyFilter, &MyCallback, nullptr);
@@ -126,6 +168,7 @@ int main(int argc, char *argv[]) {
   while (_getch() != 'q');
   wprintf_s(L"正在退出...\n");
   fsw.Close(1000);
+  */
 
   return 0;
 }

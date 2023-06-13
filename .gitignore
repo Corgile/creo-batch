@@ -2,3 +2,7 @@ cmake-build-debug
 .idea
 example/*.exe
 example/*.obj
+.vs
+out
+cmake-build-debug-mingw-clion
+cmake-build-x64-Debug
