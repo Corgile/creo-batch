@@ -1,7 +1,5 @@
-#include <conio.h>
 #include <filesystem>
 #include <fstream>
-#include <tchar.h>
 #include <set>
 #include <queue>
 #include <sstream>
@@ -101,15 +99,6 @@ void ProcessCurrentDirectory(const fs::path &current_dir) {
   items.clear();
 }
 
-void TraverseDirectory(const fs::path &directory) {
-  if (fs::is_regular_file(directory)) return;
-  ProcessCurrentDirectory(directory);
-  // 递归遍历子目录
-  for (const auto &entry: fs::directory_iterator(directory)) {
-    TraverseDirectory(entry.path());
-  }
-}
-
 void TraverseDirectoryNR(const fs::path &directory) {
   std::queue<fs::path> queue;
   queue.push(directory);
@@ -123,7 +112,6 @@ void TraverseDirectoryNR(const fs::path &directory) {
     }
   }
 }
-
 
 int main(int argc, char *argv[]) {
 //  _tsetlocale(LC_CTYPE, TEXT("chs"));
