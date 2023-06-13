@@ -63,9 +63,15 @@ public:
   ~FileSystemWatcher();
 
   // LPCTSTR dir: dont end-with "\\"
-  bool Run();
+  bool start();
 
-  void Close(DWORD dwMilliseconds = INFINITE);
+  void stop(DWORD dwMilliseconds = INFINITE);
+
+  void suspend();
+
+  void resume();
+
+  bool is_suspended();
 
 private: // no-impl
   FileSystemWatcher(const FileSystemWatcher &);
@@ -79,6 +85,7 @@ private:
   bool m_bWatchSubtree;
   HANDLE m_hThread;
   volatile bool m_bRequestStop;
+  int num = 2;
   LPDEALFUNCTION m_DealFun;
   LPVOID m_DealFunParam;
 

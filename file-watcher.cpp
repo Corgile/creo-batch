@@ -1,5 +1,7 @@
 #include "file-watcher.hpp"
 #include <cassert>
+#include <iostream>
+#include <thread>
 
 FileSystemWatcher::FileSystemWatcher(LPCTSTR dir, bool bWatchSubtree, DWORD dwNotifyFilter, LPDEALFUNCTION callback,
                                      LPVOID lParam) {
@@ -24,6 +26,15 @@ FileSystemWatcher::FileSystemWatcher(LPCTSTR dir, bool bWatchSubtree, DWORD dwNo
   m_bRequestStop = false;
   m_dir = dir;
   m_hThread = nullptr;
+  m_hDir = INVALID_HANDLE_VALUE;
+}
+
+FileSystemWatcher::~FileSystemWatcher() {
+  this->suspend();
+}
+
+bool FileSystemWatcher::start() {
+  this->stop();
   //m_dir目录不能以'\'结尾，否则监测不到dir目录被删除，不以\结尾，可以检测到（仅限于空目录时）
   m_hDir = CreateFile(
       m_dir,
@@ -35,15 +46,6 @@ FileSystemWatcher::FileSystemWatcher(LPCTSTR dir, bool bWatchSubtree, DWORD dwNo
       nullptr
   );
   if (INVALID_HANDLE_VALUE == m_hDir) exit(EXIT_FAILURE);
-}
-
-FileSystemWatcher::~FileSystemWatcher() {
-  this->Close();
-}
-
-bool
-FileSystemWatcher::Run() {
-  this->Close();
   DWORD ThreadId;
   m_hThread = CreateThread(nullptr, 0, Routine, this, 0, &ThreadId);
   if (nullptr == m_hThread) {
@@ -53,7 +55,7 @@ FileSystemWatcher::Run() {
   return nullptr != m_hThread;
 }
 
-void FileSystemWatcher::Close(DWORD dwMilliseconds) {
+void FileSystemWatcher::stop(DWORD dwMilliseconds) {
   if (nullptr != m_hThread) {
     m_bRequestStop = true;
     if (WAIT_TIMEOUT == WaitForSingleObject(m_hThread, dwMilliseconds)) {
@@ -85,7 +87,8 @@ DWORD WINAPI FileSystemWatcher::Routine(LPVOID lParam) {
                               nullptr,
                               nullptr)) // 无限等待，应当使用异步方式
     {
-      for (FILE_NOTIFY_INFORMATION *p = pNotify; p;) {
+      int i = 0;
+      for (FILE_NOTIFY_INFORMATION *p = pNotify; p && i < 4;) {
         WCHAR c = p->FileName[p->FileNameLength >> 1];
         p->FileName[p->FileNameLength >> 1] = L'\0';
         obj.m_DealFun((ACTION) p->Action, p->FileName, obj.m_DealFunParam);
@@ -95,12 +98,40 @@ DWORD WINAPI FileSystemWatcher::Routine(LPVOID lParam) {
         } else {
           p = nullptr;
         }
+        i++;
       }
     } else {
       obj.m_DealFun((ACTION) ACTION_ERRSTOP, nullptr, obj.m_DealFunParam);
       break;
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   }
-
   return 0;
+}
+
+void FileSystemWatcher::suspend() {
+  DWORD suspendCount = SuspendThread(m_hThread);
+  if (suspendCount == (DWORD) -1) {
+    std::cout << "file-watcher thread failed to suspend." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
+
+void FileSystemWatcher::resume() {
+  DWORD resumeCount = ResumeThread(m_hThread);
+  if (resumeCount == (DWORD) -1) {
+    std::cout << "file-watcher thread failed to resume." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
+
+bool FileSystemWatcher::is_suspended() {
+  CONTEXT context;
+  context.ContextFlags = CONTEXT_ALL;
+  if (GetThreadContext(m_hThread, &context)) {
+    if (context.ContextFlags & CONTEXT_INTEGER) {
+      return context.EFlags & 0x10000;
+    }
+  }
+  return false;
 }
