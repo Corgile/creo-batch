@@ -4,38 +4,55 @@
 #include <queue>
 #include <sstream>
 #include <iostream>
+#include <conio.h>
+#include <thread>
 #include "file-watcher.hpp"
 
 namespace fs = std::filesystem;
 
+void ProcessCurrentDirectory(const fs::path &current_dir);
+
+fs::path gblib_dir;
+FileSystemWatcher *fsw;
+
 void WINAPI MyCallback(FileSystemWatcher::ACTION action, LPCWSTR _filename, LPVOID lParam) {
+  SetConsoleOutputCP(65001);
+  fs::path modified_item(_filename);
+  if (modified_item.filename().string().find(".swp") != std::string::npos) return;
+  if (modified_item.filename() == "GBLib.ctg.1") return;
+
   static FileSystemWatcher::ACTION pre_act = FileSystemWatcher::ACTION_ERRSTOP;
   switch (action) {
     case FileSystemWatcher::ACTION_ADDED:
-      wprintf_s(L"\t- 添加:\t%s\n", _filename);
+      std::printf("\n\033[32m\t++ 添加 [%s]\033[0m", modified_item.string().c_str());
       break;
     case FileSystemWatcher::ACTION_REMOVED:
-      wprintf_s(L"\t- 删除:\t%s\n", _filename);
-      break;
-    case FileSystemWatcher::ACTION_MODIFIED:
-      if (pre_act == FileSystemWatcher::ACTION_MODIFIED) {
-        wprintf_s(L"\t- 修改:\t%s\n", _filename);
-      }
+      std::printf("\n\033[31m\tX 删除 [%s]\033[0m", modified_item.string().c_str());
       break;
     case FileSystemWatcher::ACTION_RENAMED_OLD:
-      wprintf_s(L"\t- 将 [%s] 改名为 ", _filename);
+      std::printf("\n\033[33m\t<> 将 [%s] 重命名为 ", modified_item.string().c_str());
       break;
     case FileSystemWatcher::ACTION_RENAMED_NEW:
       if (pre_act == FileSystemWatcher::ACTION_RENAMED_OLD) {
-        wprintf_s(L"[%s]\n", _filename);
+        std::printf("[%s]\033[0m", modified_item.string().c_str());
+      }
+      break;
+    case FileSystemWatcher::ACTION_MODIFIED:
+      std::printf(",\033[35m *导致 [%s] 被修改\033[0m,", modified_item.string().c_str());
+      if (fs::is_directory(gblib_dir / modified_item)) {
+        std::printf("\033[36m ->更新 [%s] 里的.mnu文件\033[0m",
+                    modified_item.string().c_str());
+        fsw->Close();
+        ProcessCurrentDirectory(gblib_dir / modified_item);
+        fsw->Run();
       }
       break;
     case FileSystemWatcher::ACTION_ERRSTOP:
     default:
-      wprintf_s(L"\t---错误---%s\n", _filename);
       break;
   }
   pre_act = action;
+  system("%PRO_LIBRARY_DIR%\\pro_build_library_ctg.exe > nul");
 }
 
 void RemoveVersionNumberSuffix(std::string &str) {
@@ -67,6 +84,13 @@ bool IsAllowedFile(const std::string &file_name) {
 }
 
 void ProcessCurrentDirectory(const fs::path &current_dir) {
+  for (const auto &entry: fs::directory_iterator(current_dir)) {
+    if (entry.is_regular_file()) {
+      if (entry.path().filename().string().find(".mnu") != std::string::npos) {
+        fs::remove(entry);
+      }
+    }
+  }
   // 创建 mnu 文件
   std::ofstream mnu_file(current_dir / (current_dir.filename().wstring() + L".mnu"));
   //  mnu_file.imbue(std::locale("chs"));
@@ -117,46 +141,44 @@ int main(int argc, char *argv[]) {
 //  _tsetlocale(LC_CTYPE, TEXT("chs"));
   SetConsoleOutputCP(65001);
   const char *proLibraryDir = std::getenv("PRO_LIBRARY_DIR");
-  fs::path directory;
+
   if (!proLibraryDir) {
     std::cout << "环境变量 PRO_LIBRARY_DIR 未设置" << std::endl;
     if (argc == 1) {
       std::cout << ", 程序并且缺少必要路径参数, 正在退出程序.." << std::endl;
       exit(EXIT_FAILURE);
     } else {
-      directory = fs::path(argv[1]);
-      if (!fs::exists(directory)) {
-        std::cout << "路径 [" << directory.string() << "] 不存在, 正在退出程序.." << std::endl;
+      gblib_dir = fs::path(argv[1]);
+      if (!fs::exists(gblib_dir)) {
+        std::cout << "路径 [" << gblib_dir.string() << "] 不存在, 正在退出程序.." << std::endl;
         exit(EXIT_FAILURE);
       }
     }
   } else {
-    directory = fs::path(proLibraryDir);
+    gblib_dir = fs::path(proLibraryDir);
   }
 
   std::cout << "- 正在生成 .mnu，请稍候" << std::endl;
-  TraverseDirectoryNR(directory);
+  TraverseDirectoryNR(gblib_dir);
+  system("%PRO_LIBRARY_DIR%\\pro_build_library_ctg.exe > nul");
   std::cout << "- 创建 .mnu 已完成" << std::endl;
 
-/*
-  LPCTSTR sDir = argv[1];
+  auto sDir = gblib_dir.string();
   DWORD dwNotifyFilter =
       FileSystemWatcher::FILTER_FILE_NAME
       | FileSystemWatcher::FILTER_DIR_NAME
-      | FileSystemWatcher::FILTER_LAST_WRITE_NAME;
-
-  FileSystemWatcher fsw;
-  bool r = fsw.Run(sDir, true, dwNotifyFilter, &MyCallback, nullptr);
-  if (!r) return -1;
+      | FileSystemWatcher::FILTER_LAST_ACCESS_NAME;
 
 
-  wprintf_s(L"- 监听 [%s] 的变化, ", directory.wstring().c_str());
-  wprintf_s(L"按 %c 退出.\n", 'q');
+  fsw = new FileSystemWatcher(sDir.c_str(), true, dwNotifyFilter, &MyCallback, nullptr);
+  if (!fsw->Run()) return -1;
+
+  std::cout << "- 监听 [" << sDir << "] 的变化, 按 q 退出.\n";
 
   while (_getch() != 'q');
-  wprintf_s(L"正在退出...\n");
-  fsw.Close(1000);
-  */
+  std::cout << "正在退出...\n";
+  fsw->Close(1000);
+
 
   return 0;
 }

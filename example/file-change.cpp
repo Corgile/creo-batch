@@ -110,7 +110,7 @@ void MonitorDirectoryChanges(const std::wstring &directoryPath) {
 }
 
 int main() {
-  std::wstring directoryPath = L"E:\\System\\user\\OneDrive\\Desktop\\GBLib"; // 替换为要监视的目录路径
+  std::wstring directoryPath = L"C:\\Users\\gzhu03\\IdeaProjects\\cmd-script\\example"; // 替换为要监视的目录路径
   MonitorDirectoryChanges(directoryPath);
 
   return 0;

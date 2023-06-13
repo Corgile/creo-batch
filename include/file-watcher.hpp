@@ -58,12 +58,12 @@ public:
 
   typedef void(WINAPI *LPDEALFUNCTION)(ACTION act, LPCWSTR filename, LPVOID lParam);
 
-  FileSystemWatcher();
+  FileSystemWatcher(LPCTSTR dir, bool bWatchSubtree, DWORD dwNotifyFilter, LPDEALFUNCTION callback, LPVOID lParam);
 
   ~FileSystemWatcher();
 
   // LPCTSTR dir: dont end-with "\\"
-  bool Run(LPCTSTR dir, bool bWatchSubtree, DWORD dwNotifyFilter, LPDEALFUNCTION callback, LPVOID lParam);
+  bool Run();
 
   void Close(DWORD dwMilliseconds = INFINITE);
 
@@ -74,6 +74,7 @@ private: // no-impl
 
 private:
   HANDLE m_hDir;
+  LPCTSTR m_dir;
   DWORD m_dwNotifyFilter;
   bool m_bWatchSubtree;
   HANDLE m_hThread;

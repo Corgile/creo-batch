@@ -1,7 +1,8 @@
 #include "file-watcher.hpp"
 #include <cassert>
 
-FileSystemWatcher::FileSystemWatcher() : m_hDir(INVALID_HANDLE_VALUE), m_hThread(nullptr) {
+FileSystemWatcher::FileSystemWatcher(LPCTSTR dir, bool bWatchSubtree, DWORD dwNotifyFilter, LPDEALFUNCTION callback,
+                                     LPVOID lParam) {
   assert(FILTER_FILE_NAME == FILE_NOTIFY_CHANGE_FILE_NAME);
   assert(FILTER_DIR_NAME == FILE_NOTIFY_CHANGE_DIR_NAME);
   assert(FILTER_ATTR_NAME == FILE_NOTIFY_CHANGE_ATTRIBUTES);
@@ -16,18 +17,16 @@ FileSystemWatcher::FileSystemWatcher() : m_hDir(INVALID_HANDLE_VALUE), m_hThread
   assert(ACTION_MODIFIED == FILE_ACTION_MODIFIED);
   assert(ACTION_RENAMED_OLD == FILE_ACTION_RENAMED_OLD_NAME);
   assert(ACTION_RENAMED_NEW == FILE_ACTION_RENAMED_NEW_NAME);
-}
-
-FileSystemWatcher::~FileSystemWatcher() {
-  this->Close();
-}
-
-bool
-FileSystemWatcher::Run(LPCTSTR dir, bool bWatchSubtree, DWORD dwNotifyFilter, LPDEALFUNCTION callback, LPVOID lParam) {
-  this->Close();
-
-  m_hDir = CreateFile(//dir目录不能以'\'结尾，否则监测不到dir目录被删除，不以\结尾，可以检测到（仅限于空目录时）
-      dir,
+  m_bWatchSubtree = bWatchSubtree;
+  m_dwNotifyFilter = dwNotifyFilter;
+  m_DealFun = callback;
+  m_DealFunParam = lParam;
+  m_bRequestStop = false;
+  m_dir = dir;
+  m_hThread = nullptr;
+  //m_dir目录不能以'\'结尾，否则监测不到dir目录被删除，不以\结尾，可以检测到（仅限于空目录时）
+  m_hDir = CreateFile(
+      m_dir,
       GENERIC_READ,
       FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
       nullptr,
@@ -35,21 +34,22 @@ FileSystemWatcher::Run(LPCTSTR dir, bool bWatchSubtree, DWORD dwNotifyFilter, LP
       FILE_FLAG_BACKUP_SEMANTICS,
       nullptr
   );
-  if (INVALID_HANDLE_VALUE == m_hDir) return false;
+  if (INVALID_HANDLE_VALUE == m_hDir) exit(EXIT_FAILURE);
+}
 
-  m_bWatchSubtree = bWatchSubtree;
-  m_dwNotifyFilter = dwNotifyFilter;
-  m_DealFun = callback;
-  m_DealFunParam = lParam;
-  m_bRequestStop = false;
+FileSystemWatcher::~FileSystemWatcher() {
+  this->Close();
+}
 
+bool
+FileSystemWatcher::Run() {
+  this->Close();
   DWORD ThreadId;
   m_hThread = CreateThread(nullptr, 0, Routine, this, 0, &ThreadId);
   if (nullptr == m_hThread) {
     CloseHandle(m_hDir);
     m_hDir = INVALID_HANDLE_VALUE;
   }
-
   return nullptr != m_hThread;
 }
 
@@ -59,8 +59,6 @@ void FileSystemWatcher::Close(DWORD dwMilliseconds) {
     if (WAIT_TIMEOUT == WaitForSingleObject(m_hThread, dwMilliseconds)) {
       // FIXME: 不推荐的方法
       TerminateThread(m_hThread, 0);
-      //CloseHandle(m_hThread);
-      //exit(EXIT_SUCCESS);
     }
     CloseHandle(m_hThread);
     m_hThread = nullptr;
