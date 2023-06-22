@@ -13,12 +13,11 @@ void ProcessCurrentDirectory(const fs::path &current_dir);
 
 void RemoveVersionNumberSuffix(std::wstring &str);
 
-bool IsAllowedFile(const std::wstring &file_name);
+bool IsAllowedFile(const std::wstring &file_name, bool hasAsm);
 
 std::string toGbk(std::wstring &utf16Text);
 
 fs::path cwd_prefix;
-//fs::path old_name_of_mnu;
 FileSystemWatcher *watcher;
 
 void WINAPI MyCallback(FileSystemWatcher::ACTION action, LPCWSTR _filename, LPVOID lParam) {
@@ -35,7 +34,7 @@ void WINAPI MyCallback(FileSystemWatcher::ACTION action, LPCWSTR _filename, LPVO
       if (fs::is_regular_file(abs_path_of_modified_item)) {
         auto f = modified_item.filename().wstring();
         RemoveVersionNumberSuffix(f);
-        if (!IsAllowedFile(f)) break;
+        if (!IsAllowedFile(f, false)) break;
         std::printf("\033[32m++ 添加文件 [%s]\033[0m\n", modified_item.string().c_str());
         ProcessCurrentDirectory(abs_path_of_modified_item.parent_path());
       }
@@ -58,11 +57,8 @@ void WINAPI MyCallback(FileSystemWatcher::ACTION action, LPCWSTR _filename, LPVO
       if (fs::is_regular_file(abs_path_of_modified_item)) {
         auto f = modified_item.filename().wstring();
         RemoveVersionNumberSuffix(f);
-        if (!IsAllowedFile(f)) break;
+        if (!IsAllowedFile(f, false)) break;
       }
-//      if (fs::is_directory(abs_path_of_modified_item)) {
-//        std::printf("\033[31mX 删除文件夹 [%s]\033[0m\n", modified_item.string().c_str());
-//      }
       if (fs::exists(abs_path_of_modified_item.parent_path()))
         ProcessCurrentDirectory(abs_path_of_modified_item.parent_path());
       break;
@@ -122,10 +118,19 @@ bool EndsWith(const std::wstring &str, const std::wstring &suffix) {
   return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
 }
 
-bool IsAllowedFile(const std::wstring &file_name) {
+bool IsAllowedFile(const std::wstring &file_name, bool hasAsm) {
   bool is_asm = EndsWith(file_name, L".asm");
-  bool is_prt = EndsWith(file_name, L".prt");
-  return is_asm || is_prt;
+  if (hasAsm) return is_asm;
+  return is_asm || EndsWith(file_name, L".prt");
+}
+
+bool HasAsmFile(const fs::path &current_dir) {
+  for (const auto &entry: fs::directory_iterator(current_dir)) {
+    if (entry.path().filename().wstring().find(L".asm") != std::wstring::npos) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void ProcessCurrentDirectory(const fs::path &current_dir) {
@@ -144,12 +149,13 @@ void ProcessCurrentDirectory(const fs::path &current_dir) {
   std::ofstream mnu_file(mnu_file_name, std::ios::out);
   std::wstringstream wcontent;
   wcontent << current_dir.filename().wstring() << L"\n#\n#\n";
+  bool hasAsm = HasAsmFile(current_dir);
   // 遍历当前目录下的文件和子目录
   for (const auto &entry: fs::directory_iterator(current_dir)) {
     if (entry.is_regular_file()) {
       auto file_name = entry.path().filename().wstring();
       RemoveVersionNumberSuffix(file_name);
-      if (IsAllowedFile(file_name)) {
+      if (IsAllowedFile(file_name, hasAsm)) {
         wcontent << file_name << L"\n备注-" << file_name << L"\n#\n";
       }
     }
