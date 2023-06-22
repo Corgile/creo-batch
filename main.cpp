@@ -147,11 +147,13 @@ void ProcessCurrentDirectory(const fs::path &current_dir) {
   }
   // 创建 mnu 文件
   std::ofstream mnu_file(mnu_file_name, std::ios::out);
-  std::wstringstream wcontent;
-  wcontent << current_dir.filename().wstring() << L"\n#\n#\n";
+  auto wtitle = current_dir.filename().wstring() + L"\n#\n#\n";
+  mnu_file << toGbk(wtitle);
+  std::set<std::wstring> item_set;
   bool hasAsm = HasAsmFile(current_dir);
   // 遍历当前目录下的文件和子目录
   for (const auto &entry: fs::directory_iterator(current_dir)) {
+    std::wstringstream wcontent;
     if (entry.is_regular_file()) {
       auto file_name = entry.path().filename().wstring();
       RemoveVersionNumberSuffix(file_name);
@@ -171,9 +173,13 @@ void ProcessCurrentDirectory(const fs::path &current_dir) {
       auto folder_name = renamed_path.filename().wstring();
       wcontent << L"/" << folder_name << L"\n备注-" << folder_name.substr(2) << L"\n#\n";
     }
+    item_set.insert(wcontent.str());
+    wcontent.str({});
   }
-  std::wstring utf16Text = wcontent.str();
-  mnu_file << toGbk(utf16Text);
+  for (auto item: item_set) {
+    mnu_file << toGbk(item);
+  }
+  item_set.clear();
 }
 
 std::string toGbk(std::wstring &utf16Text) {
