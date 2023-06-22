@@ -69,14 +69,8 @@ public:
 
   void suspend();
 
-  void resume();
-
-  bool is_suspended();
-
 private: // no-impl
   FileSystemWatcher(const FileSystemWatcher &);
-
-  FileSystemWatcher operator=(const FileSystemWatcher);
 
 private:
   HANDLE m_hDir;

@@ -117,21 +117,3 @@ void FileSystemWatcher::suspend() {
   }
 }
 
-void FileSystemWatcher::resume() {
-  DWORD resumeCount = ResumeThread(m_hThread);
-  if (resumeCount == (DWORD) -1) {
-    std::cout << "file-watcher thread failed to resume." << std::endl;
-    exit(EXIT_FAILURE);
-  }
-}
-
-bool FileSystemWatcher::is_suspended() {
-  CONTEXT context;
-  context.ContextFlags = CONTEXT_ALL;
-  if (GetThreadContext(m_hThread, &context)) {
-    if (context.ContextFlags & CONTEXT_INTEGER) {
-      return context.EFlags & 0x10000;
-    }
-  }
-  return false;
-}

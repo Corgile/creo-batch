@@ -5,7 +5,6 @@
 #include <sstream>
 #include <iostream>
 #include <conio.h>
-#include <thread>
 #include "file-watcher.hpp"
 
 namespace fs = std::filesystem;
@@ -147,7 +146,6 @@ void ProcessCurrentDirectory(const fs::path &current_dir) {
   wcontent << current_dir.filename().wstring() << L"\n#\n#\n";
   // 遍历当前目录下的文件和子目录
   for (const auto &entry: fs::directory_iterator(current_dir)) {
-//    std::wstringstream oss;
     if (entry.is_regular_file()) {
       auto file_name = entry.path().filename().wstring();
       RemoveVersionNumberSuffix(file_name);
@@ -167,12 +165,9 @@ void ProcessCurrentDirectory(const fs::path &current_dir) {
       auto folder_name = renamed_path.filename().wstring();
       wcontent << L"/" << folder_name << L"\n备注-" << folder_name.substr(2) << L"\n#\n";
     }
-//    items.insert(oss.str());
   }
-
   std::wstring utf16Text = wcontent.str();
   mnu_file << toGbk(utf16Text);
-
 }
 
 std::string toGbk(std::wstring &utf16Text) {
