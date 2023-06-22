@@ -134,7 +134,7 @@ bool HasAsmFile(const fs::path &current_dir) {
 }
 
 void ProcessCurrentDirectory(const fs::path &current_dir) {
-
+  //TODO : 空文件夹不要创建mnu
   auto mnu_file_name = current_dir / (current_dir.filename().wstring() + L".mnu");
   if (!fs::exists(mnu_file_name)) {
     for (const auto &entry: fs::directory_iterator(current_dir)) {
@@ -184,18 +184,17 @@ void ProcessCurrentDirectory(const fs::path &current_dir) {
 
 std::string toGbk(std::wstring &utf16Text) {
   int requiredSize = WideCharToMultiByte(CP_ACP, 0, utf16Text.c_str(), -1, nullptr, 0, nullptr, nullptr);
-  if (requiredSize > 0) {
-    std::string gbkText(requiredSize, '\0');
-    if (WideCharToMultiByte(CP_ACP, 0, utf16Text.c_str(), -1, &gbkText[0], requiredSize, nullptr, nullptr) != 0) {
-      gbkText.resize(requiredSize - 1);  // 去除结尾的 null 字符
-      return gbkText;
-    } else {
-      std::cerr << "Failed to convert UTF-16 to GBK" << std::endl;
-    }
-  } else {
+  if (requiredSize <= 0) {
     std::cerr << "Failed to calculate required buffer size" << std::endl;
+    return {};
   }
-  return "";
+  std::string gbkText(requiredSize, '\0');
+  if (WideCharToMultiByte(CP_ACP, 0, utf16Text.c_str(), -1, &gbkText[0], requiredSize, nullptr, nullptr) != 0) {
+    gbkText.resize(requiredSize - 1);  // 去除结尾的 null 字符
+    return gbkText;
+  }
+  std::cerr << "Failed to convert UTF-16 to GBK" << std::endl;
+  return {};
 }
 
 void TraverseDirectoryNR(const fs::path &directory) {
