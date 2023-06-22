@@ -7,7 +7,6 @@
 #include <conio.h>
 #include <thread>
 #include "file-watcher.hpp"
-#include "util.hpp"
 
 namespace fs = std::filesystem;
 
@@ -17,8 +16,10 @@ void RemoveVersionNumberSuffix(std::wstring &str);
 
 bool IsAllowedFile(const std::wstring &file_name);
 
+std::string toGbk(std::wstring &utf16Text);
+
 fs::path cwd_prefix;
-fs::path old_name_of_mnu;
+//fs::path old_name_of_mnu;
 FileSystemWatcher *watcher;
 
 void WINAPI MyCallback(FileSystemWatcher::ACTION action, LPCWSTR _filename, LPVOID lParam) {
@@ -68,7 +69,7 @@ void WINAPI MyCallback(FileSystemWatcher::ACTION action, LPCWSTR _filename, LPVO
       break;
     case FileSystemWatcher::ACTION_RENAMED_OLD:
       std::printf("\033[33m<> 将 [%s] 重命名为 ", modified_item.string().c_str());
-      old_name_of_mnu = fs::path(modified_item.filename().wstring().append(L".mnu"));
+//      old_name_of_mnu = fs::path(modified_item.filename().wstring().append(L".mnu"));
       break;
     case FileSystemWatcher::ACTION_RENAMED_NEW:
       if (pre_act != FileSystemWatcher::ACTION_RENAMED_OLD) {
@@ -141,21 +142,17 @@ void ProcessCurrentDirectory(const fs::path &current_dir) {
     }
   }
   // 创建 mnu 文件
-  std::wofstream mnu_file(mnu_file_name, std::ios::out);
-  mnu_file.imbue(std::locale(mnu_file.getloc(), new std::codecvt_utf8<wchar_t>));
+  std::ofstream mnu_file(mnu_file_name, std::ios::out);
   std::wstringstream wcontent;
-
-  //  mnu_file.imbue(std::locale("chs"));
   wcontent << current_dir.filename().wstring() << L"\n#\n#\n";
   // 遍历当前目录下的文件和子目录
-//  std::set<std::wstring> items;
   for (const auto &entry: fs::directory_iterator(current_dir)) {
 //    std::wstringstream oss;
     if (entry.is_regular_file()) {
       auto file_name = entry.path().filename().wstring();
       RemoveVersionNumberSuffix(file_name);
       if (IsAllowedFile(file_name)) {
-        wcontent << file_name << L"\nBeiZhu-" << file_name << L"\n#\n";
+        wcontent << file_name << L"\n备注-" << file_name << L"\n#\n";
       }
     }
     if (entry.is_directory()) {
@@ -168,11 +165,30 @@ void ProcessCurrentDirectory(const fs::path &current_dir) {
         } else { fs::rename(entry.path(), renamed_path); }
       }
       auto folder_name = renamed_path.filename().wstring();
-      wcontent << L"/" << folder_name << L"\nBeiZhu-" << folder_name.substr(2) << L"\n#\n";
+      wcontent << L"/" << folder_name << L"\n备注-" << folder_name.substr(2) << L"\n#\n";
     }
 //    items.insert(oss.str());
   }
-  mnu_file << wcontent.str();
+
+  std::wstring utf16Text = wcontent.str();
+  mnu_file << toGbk(utf16Text);
+
+}
+
+std::string toGbk(std::wstring &utf16Text) {
+  int requiredSize = WideCharToMultiByte(CP_ACP, 0, utf16Text.c_str(), -1, nullptr, 0, nullptr, nullptr);
+  if (requiredSize > 0) {
+    std::string gbkText(requiredSize, '\0');
+    if (WideCharToMultiByte(CP_ACP, 0, utf16Text.c_str(), -1, &gbkText[0], requiredSize, nullptr, nullptr) != 0) {
+      gbkText.resize(requiredSize - 1);  // 去除结尾的 null 字符
+      return gbkText;
+    } else {
+      std::cerr << "Failed to convert UTF-16 to GBK" << std::endl;
+    }
+  } else {
+    std::cerr << "Failed to calculate required buffer size" << std::endl;
+  }
+  return "";
 }
 
 void TraverseDirectoryNR(const fs::path &directory) {
@@ -213,6 +229,14 @@ int main(int argc, char *argv[]) {
   TraverseDirectoryNR(cwd_prefix);
   system("%PRO_LIBRARY_DIR%\\pro_build_library_ctg.exe > nul");
   std::cout << "- 创建 .mnu 已完成" << std::endl;
+  std::cout << "如需开启自动检测变化功能，按 y/Y. 其他任意键退出程序" << std::endl;
+
+  int keyCode = _getch();
+  if (keyCode != 'y' && keyCode != 'Y') {
+    SetConsoleOutputCP(936);
+    system("pause");
+    return 0;
+  }
 
   auto sDir = cwd_prefix.string();
   DWORD dwNotifyFilter =
@@ -225,7 +249,6 @@ int main(int argc, char *argv[]) {
   std::cout << "- 正在检测 [" << sDir << "] 的变化, 按 q 退出.\n";
   while (_getch() != 'q');
   watcher->stop(1);
-  system("pause");
   SetConsoleOutputCP(936);
 
   return 0;
