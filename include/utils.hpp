@@ -20,6 +20,8 @@ namespace xhl {
     fs::path cwd_prefix;
     FileSystemWatcher *watcher;
 
+    /// declarations
+
     void GenerateMenuFileInCurrentDir(const fs::path &dir);
 
     void RemoveVersionNumberSuffix(std::wstring &str);
@@ -37,6 +39,8 @@ namespace xhl {
     void TraverseDirectoryNR(const fs::path &directory);
 
     void WINAPI MyCallback(FileSystemWatcher::ACTION action, LPCWSTR _filename, LPVOID lParam);
+
+    /// definitions
 
     void WINAPI MyCallback(FileSystemWatcher::ACTION action, LPCWSTR _filename, LPVOID lParam) {
       SetConsoleOutputCP(65001);
