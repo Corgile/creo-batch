@@ -3,7 +3,6 @@
 #ifndef CMD_SCRIPT_UTILS_HPP
 #define CMD_SCRIPT_UTILS_HPP
 
-#include <windows.h>
 #include <stringapiset.h>
 #include <filesystem>
 #include <fstream>

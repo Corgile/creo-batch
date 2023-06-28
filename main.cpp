@@ -30,7 +30,7 @@ void TraverseDirectoryNR(const utils::fs::path &directory) {
 }
 
 int main(int argc, char *argv[]) {
-  SetConsoleOutputCP(65001);
+  system("chcp 65001");
   utils::fs::path gb_lib_home;
   const char *proLibraryDir{std::getenv("PRO_LIBRARY_DIR")};
   if (!proLibraryDir) {
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   std::cout << "- OK\n- 运行 pro_build_library_ctg.exe" << std::endl;
   system("%PRO_LIBRARY_DIR%\\pro_build_library_ctg.exe > nul");
   std::cout << "- 完成" << std::endl;
-  SetConsoleOutputCP(936);
+  system("chcp 936");
   system("pause");
 
   return 0;
