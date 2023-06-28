@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
   std::cout << "- OK\n- 运行 pro_build_library_ctg.exe" << std::endl;
   system("%PRO_LIBRARY_DIR%\\pro_build_library_ctg.exe > nul");
   std::cout << "- 完成" << std::endl;
+  SetConsoleOutputCP(936);
 
   return 0;
 }
