@@ -14,22 +14,19 @@ dir_item::dir_item(const utils::fs::path &_full_path) {
 void dir_item::dump_to_file() {
   if (this->children.empty()) return;
   auto stem{full_path.filename().wstring() + L".mnu"};
-  auto mnu_file_name{full_path / utils::fs::path(stem)};
-  std::ofstream mnu_file(mnu_file_name, std::ios::out | std::ios::binary);
-  std::wstringstream mnu_content;
+  auto filename{full_path / utils::fs::path(stem)};
+  std::ofstream mnu_file(filename, std::ios::out | std::ios::binary);
   // for the title
-  mnu_content << this->short_name << L"\n#\n#\n";
+  std::wstring mnu_content{this->short_name + L"\n#\n#\n"};
   // for the items
   for (const auto &child: children) {
     std::wstring comment{child};
     if (child.find_first_of('/') != std::wstring::npos) {
       comment = child.substr(3);
     }
-    mnu_content << child << L"\n"
-                << L"备注-" << comment << L"\n"
-                << L"#\n";
+    mnu_content.append(child).append(L"\n备注-").append(comment).append(L"\n#\n");
   }
-  mnu_file << utils::ToGBK(mnu_content.str());
+  mnu_file << utils::ToGBK(mnu_content);
   mnu_file.flush();
   mnu_file.close();
 }
