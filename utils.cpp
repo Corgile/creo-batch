@@ -4,7 +4,7 @@
 #include "utils.hpp"
 
 std::wstring utils::TrimNumSuffix(std::wstring str) {
-  std::size_t dotPosition = str.find_last_of('.');
+  std::size_t dotPosition{str.find_last_of('.')};
   if (dotPosition == std::wstring::npos) { return str; }
   std::wstring suffix = str.substr(dotPosition + 1);// 检查后缀是否是数字(如果是)
   if (suffix.find_first_not_of(L"0123456789") == std::wstring::npos) {
@@ -26,7 +26,7 @@ bool utils::EndsWith(const std::wstring &str, const std::wstring &suffix) {
 }
 
 std::string utils::ToGBK(const std::wstring &utf16Text) {
-  int requiredSize = WideCharToMultiByte(0, 0, utf16Text.c_str(), -1, nullptr, 0, nullptr, nullptr);
+  int requiredSize{WideCharToMultiByte(0, 0, utf16Text.c_str(), -1, nullptr, 0, nullptr, nullptr)};
   if (requiredSize <= 0) {
     // Failed to calculate required buffer size
     return {};

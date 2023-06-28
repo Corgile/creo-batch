@@ -32,7 +32,7 @@ void TraverseDirectoryNR(const utils::fs::path &directory) {
 int main(int argc, char *argv[]) {
   SetConsoleOutputCP(65001);
   utils::fs::path gb_lib_home;
-  const char *proLibraryDir = std::getenv("PRO_LIBRARY_DIR");
+  const char *proLibraryDir{std::getenv("PRO_LIBRARY_DIR")};
   if (!proLibraryDir) {
     std::cout << "环境变量 PRO_LIBRARY_DIR 未设置" << std::endl;
     if (argc == 1) {

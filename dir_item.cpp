@@ -13,8 +13,8 @@ dir_item::dir_item(const utils::fs::path &_full_path) {
 
 void dir_item::dump_to_file() {
   if (this->children.empty()) return;
-  auto stem = full_path.filename().wstring() + L".mnu";
-  auto mnu_file_name = full_path / utils::fs::path(stem);
+  auto stem{full_path.filename().wstring() + L".mnu"};
+  auto mnu_file_name{full_path / utils::fs::path(stem)};
   std::ofstream mnu_file(mnu_file_name, std::ios::out | std::ios::binary);
   std::wstringstream mnu_content;
   // for the title
@@ -48,7 +48,7 @@ void dir_item::add_child(const utils::fs::path &child) {
     if (prt_cleared) {
       goto emplace;
     }
-    for (auto it = children.begin(); it != children.end();) {
+    for (auto it{children.begin()}; it != children.end();) {
       if (utils::EndsWith(*it, L".prt")) {
         it = children.erase(it);
       } else {
