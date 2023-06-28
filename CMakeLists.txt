@@ -7,4 +7,4 @@ include_directories(include)
 
 #add_compile_definitions(AUTO_DETECT)
 
-add_executable(auto-create main.cpp file-watcher.cpp utils.cpp)
+add_executable(auto-create main.cpp dir_item.cpp utils.cpp)
