@@ -1,7 +1,7 @@
 //// Created by corgi on 2023年6月23日.
 
-#ifndef CMD_SCRIPT_UTILS_HPP
-#define CMD_SCRIPT_UTILS_HPP
+#ifndef AUTO_CREATE_UTILS_HPP
+#define AUTO_CREATE_UTILS_HPP
 
 #include <stringapiset.h>
 #include <filesystem>
@@ -23,4 +23,4 @@ namespace utils {
 
 }
 
-#endif//CMD_SCRIPT_UTILS_HPP
+#endif//AUTO_CREATE_UTILS_HPP
