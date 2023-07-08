@@ -3,14 +3,15 @@
 //
 #include "utils.hpp"
 
-std::wstring utils::TrimNumSuffix(std::wstring str) {
-  std::size_t dotPosition{str.find_last_of('.')};
-  if (dotPosition == std::wstring::npos) { return str; }
-  std::wstring suffix = str.substr(dotPosition + 1);// 检查后缀是否是数字(如果是)
+std::wstring utils::TrimNumSuffix(std::wstring wstr) {
+  std::size_t dotPosition{wstr.find_last_of('.')};
+  if (dotPosition == std::wstring::npos) { return wstr; }
+  std::wstring suffix = wstr.substr(dotPosition + 1);
+  // 检查后缀是否是数字(如果是)
   if (suffix.find_first_not_of(L"0123456789") == std::wstring::npos) {
-    str = str.substr(0, dotPosition);
+    wstr = wstr.substr(0, dotPosition);
   }
-  return str;
+  return wstr;
 }
 
 bool utils::StartsWith(const std::wstring &str, const std::wstring &prefix) {
