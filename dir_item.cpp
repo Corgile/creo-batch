@@ -21,7 +21,7 @@ void dir_item::dump_to_file() {
   // for the items
   for (const auto &child: children) {
     std::wstring comment{child};
-    if (child.find_first_of('/') != std::wstring::npos) {
+    if (child.find_first_of('/') not_eq std::wstring::npos) {
       comment = child.substr(3);
     }
     mnu_content.append(child).append(L"\n备注-").append(comment).append(L"\n#\n");
@@ -45,7 +45,7 @@ void dir_item::add_child(const utils::fs::path &child) {
     if (prt_cleared) {
       goto emplace;
     }
-    for (auto it{children.begin()}; it != children.end();) {
+    for (auto it{children.begin()}; it not_eq children.end();) {
       if (utils::EndsWith(*it, L".prt")) {
         it = children.erase(it);
       } else {
@@ -55,7 +55,7 @@ void dir_item::add_child(const utils::fs::path &child) {
     this->prt_cleared = true;
   }
 emplace:
-  if (!has_asm && is_prt || has_asm && is_asm) {
+  if (not has_asm and is_prt or has_asm and is_asm) {
     this->children.insert(filename);
   }
 }

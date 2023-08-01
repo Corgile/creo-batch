@@ -5,7 +5,7 @@
 void TraverseDirectoryNR(const utils::fs::path &directory) {
   std::queue<utils::fs::path> queue;
   queue.push(directory);
-  while (!queue.empty()) {
+  while (not queue.empty()) {
     utils::fs::path current{queue.front()};
     queue.pop();
     if (utils::fs::is_regular_file(current)) continue;
@@ -17,7 +17,7 @@ void TraverseDirectoryNR(const utils::fs::path &directory) {
         utils::fs::remove(entry);
         continue;
       }
-      auto should_rename{entry.is_directory() && not utils::StartsWith(wstr_filename, L"A-")};
+      auto should_rename{entry.is_directory() and not utils::StartsWith(wstr_filename, L"A-")};
       auto renamed_path{entry.path().parent_path() / (L"A-" + wstr_filename)};
       if (should_rename) {
         utils::fs::rename(entry, renamed_path);
@@ -32,15 +32,15 @@ void TraverseDirectoryNR(const utils::fs::path &directory) {
 int main(int argc, char *argv[]) {
   system("chcp 65001 > nul");
   utils::fs::path gb_lib_home;
-  const char *proLibraryDir{std::getenv("PRO_LIBRARY_DIR")};
-  if (!proLibraryDir) {
+  auto proLibraryDir{std::getenv("PRO_LIBRARY_DIR")};
+  if (not proLibraryDir) {
     std::cout << "环境变量 PRO_LIBRARY_DIR 未设置" << std::endl;
     if (argc == 1) {
       std::cout << ", 程序并且缺少必要路径参数, 正在退出程序.." << std::endl;
       exit(EXIT_FAILURE);
     } else {
       gb_lib_home = utils::fs::path(argv[1]);
-      if (!utils::fs::exists(gb_lib_home)) {
+      if (not utils::fs::exists(gb_lib_home)) {
         std::wcout << "路径 [" << gb_lib_home.wstring() << "] 不存在, 正在退出程序.." << std::endl;
         exit(EXIT_FAILURE);
       }

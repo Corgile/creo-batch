@@ -4,12 +4,12 @@
 #include "utils.hpp"
 
 std::wstring utils::TrimNumSuffix(std::wstring wstr) {
-  std::size_t dotPosition{wstr.find_last_of('.')};
-  if (dotPosition == std::wstring::npos) { return wstr; }
-  std::wstring suffix = wstr.substr(dotPosition + 1);
+  auto dot_position{wstr.find_last_of('.')};
+  if (dot_position == std::wstring::npos) { return wstr; }
+  auto suffix{wstr.substr(dot_position + 1)};
   // 检查后缀是否是数字(如果是)
   if (suffix.find_first_not_of(L"0123456789") == std::wstring::npos) {
-    wstr = wstr.substr(0, dotPosition);
+    wstr = wstr.substr(0, dot_position);
   }
   return wstr;
 }
@@ -27,14 +27,14 @@ bool utils::EndsWith(const std::wstring &str, const std::wstring &suffix) {
 }
 
 std::string utils::ToGBK(const std::wstring &utf16Text) {
-  int requiredSize{WideCharToMultiByte(0, 0, utf16Text.c_str(), -1, nullptr, 0, nullptr, nullptr)};
-  if (requiredSize <= 0) {
+  int required_size{WideCharToMultiByte(0, 0, utf16Text.c_str(), -1, nullptr, 0, nullptr, nullptr)};
+  if (required_size <= 0) {
     // Failed to calculate required buffer size
     return {};
   }
-  std::string gbkText(requiredSize, '\0');
-  if (WideCharToMultiByte(0, 0, utf16Text.c_str(), -1, &gbkText[0], requiredSize, nullptr, nullptr) != 0) {
-    gbkText.resize(requiredSize - 1);// 去除结尾的 null 字符
+  std::string gbkText(required_size, '\0');
+  if (WideCharToMultiByte(0, 0, utf16Text.c_str(), -1, &gbkText[0], required_size, nullptr, nullptr) not_eq 0) {
+    gbkText.resize(required_size - 1);// 去除结尾的 null 字符
     return gbkText;
   }
   // Failed to convert UTF-16 to GBK

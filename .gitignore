@@ -6,3 +6,4 @@ out
 cmake-build-debug-mingw-clion
 cmake-build-x64-Debug
 cmake-build-default-system
+cmake-build-debug-vs
