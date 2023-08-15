@@ -37,8 +37,8 @@ void dir_item::add_child(const utils::fs::path &child) {
     return;
   }
   auto filename{utils::TrimNumSuffix(child.filename().wstring())};
-  bool is_asm = utils::EndsWith(filename, L".asm");
-  bool is_prt = utils::EndsWith(filename, L".prt");
+  bool is_asm{utils::EndsWith(filename, L".asm")};
+  bool is_prt{utils::EndsWith(filename, L".prt")};
 
   if (is_asm) {
     this->has_asm = true;
@@ -54,7 +54,7 @@ void dir_item::add_child(const utils::fs::path &child) {
     }
     this->prt_cleared = true;
   }
-emplace:
+  emplace:
   if (not has_asm and is_prt or has_asm and is_asm) {
     this->children.insert(filename);
   }
