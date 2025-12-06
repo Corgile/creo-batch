@@ -1,28 +1,29 @@
-cmake_minimum_required(VERSION 3.25)
-project(auto-create)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
+PROJECT(auto-create)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_GENERATOR_PLATFORM x64)
+SET(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+INCLUDE_DIRECTORIES(include)
+INCLUDE(cmake/SetupDateBasedOutput.cmake)
 
-include_directories(include)
 
-add_executable(${PROJECT_NAME} main.cpp dir_item.cpp utils.cpp)
+ADD_COMPILE_DEFINITIONS(_WIN32_WINNT=0x0601)
 
-# 安装文件
-install(TARGETS ${PROJECT_NAME} DESTINATION .)
-install(FILES D:/msys64/mingw64/bin/libstdc++-6.dll DESTINATION .)
-install(FILES D:/msys64/mingw64/bin/libwinpthread-1.dll DESTINATION .)
-install(FILES D:/msys64/mingw64/bin/libgcc_s_seh-1.dll DESTINATION .)
+SET(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 
-# 添加打包规则
-
-set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
-set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "发行版")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY ${PROJECT_NAME})
-
-set(CPACK_GENERATOR ZIP)
-
-include(CPack)
+ADD_EXECUTABLE(${PROJECT_NAME}
+    dir_item.cpp
+    dir_item.hpp
+    main.cpp
+    utils.cpp
+    utils.hpp
+)
+INCLUDE(cmake/post-build.cmake)
+TARGET_COMPILE_DEFINITIONS(${PROJECT_NAME} PRIVATE
+    NOMINMAX            # 防止Windows.h定义min/max宏
+    WIN32_LEAN_AND_MEAN # 减少Windows.h包含内容，提高编译速度
+)
